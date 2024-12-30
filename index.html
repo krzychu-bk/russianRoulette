@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Russian Roulette Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20px;
+    }
+    #output {
+      margin: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      background-color: #f9f9f9;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    button {
+      margin: 5px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .trigger-button {
+      display: inline-block;
+      width: 120px;
+    }
+    .eliminated {
+      background-color: #ffcccc;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <h1>Russian Roulette Game</h1>
+  <p id="status">Press "Start Game" to begin.</p>
+  <div>
+    <button id="startButton">Start Game</button>
+    <button id="restartButton" disabled>Restart Game</button>
+  </div>
+  <div id="output"></div>
+  <div id="triggers" style="margin-top: 20px;"></div>
+
+  <script>
+    class RussianRoulette {
+      constructor() {
+        this.players = ["Kamil", "Sysiu", "Dawid", "Witek", "Tomaszewski"];
+        this.revolver = [];
+        this.gameOver = false;
+      }
+
+      // Load the revolver with one bullet in a random chamber
+      loadRevolver() {
+        let chambers = [false, false, false, false, false, false];
+        const bulletPosition = Math.floor(Math.random() * 6);
+        chambers[bulletPosition] = true;
+        console.log("Revolver reloaded. New random bullet position.");
+        return chambers;
+      }
+
+      // Start the game
+      startGame() {
+        this.revolver = this.loadRevolver();
+        this.gameOver = false;
+        return "The game has started! Players can pull their triggers.";
+      }
+
+      // Simulate pulling the trigger
+      pullTrigger(playerIndex) {
+        if (this.gameOver) {
+          return "The game is over. Restart to play again.";
+        }
+
+        const chamber = this.revolver.shift(); // Take the first chamber
+        this.revolver.push(false); // Rotate the revolver
+
+        const player = this.players[playerIndex];
+        if (chamber) {
+          this.players[playerIndex] = null; // Eliminate the player
+          const remainingPlayers = this.players.filter(p => p !== null).length;
+          if (remainingPlayers === 1) {
+            this.gameOver = true;
+            return `${player} pulled the trigger... 💥 ${player} is out! Game Over! ${
+              this.players.find(p => p !== null)
+            } is the winner! 🎉`;
+          } else {
+            // Reload the revolver after a player dies
+            this.revolver = this.loadRevolver();
+            return `${player} pulled the trigger... 💥 ${player} is out! The revolver is reloaded.`;
+          }
+        } else {
+          return `${player} pulled the trigger... Click! They're safe.`;
+        }
+      }
+
+      // Restart the game
+      restartGame() {
+        this.players = ["Kamil", "Sysiu", "Dawid", "Witek", "Tomaszewskic"];
+        this.revolver = this.loadRevolver();
+        this.gameOver = false;
+        return "The game has been restarted! Players can pull their triggers.";
+      }
+    }
+
+    // Initialize the game
+    const game = new RussianRoulette();
+
+    // UI Elements
+    const statusEl = document.getElementById("status");
+    const outputEl = document.getElementById("output");
+    const startButton = document.getElementById("startButton");
+    const restartButton = document.getElementById("restartButton");
+    const triggersEl = document.getElementById("triggers");
+
+    // Create trigger buttons for players
+    function createTriggerButtons(players) {
+      triggersEl.innerHTML = ""; // Clear previous buttons
+      players.forEach((player, index) => {
+        const button = document.createElement("button");
+        button.textContent = `Trigger ${player}`;
+        button.className = "trigger-button";
+        button.id = `triggerButton-${index}`;
+        button.disabled = true;
+        button.addEventListener("click", () => {
+          const result = game.pullTrigger(index);
+          outputEl.textContent = result;
+
+          // Update the button state if the player is eliminated
+          if (game.players[index] === null) {
+            button.disabled = true;
+            button.classList.add("eliminated");
+          }
+
+          // Disable all buttons if the game is over
+          if (game.gameOver) {
+            disableAllTriggers();
+          }
+        });
+        triggersEl.appendChild(button);
+      });
+    }
+
+    // Disable all trigger buttons
+    function disableAllTriggers() {
+      const buttons = document.querySelectorAll(".trigger-button");
+      buttons.forEach(button => button.disabled = true);
+    }
+
+    // Enable all trigger buttons for remaining players
+    function enableTriggersForActivePlayers() {
+      const buttons = document.querySelectorAll(".trigger-button");
+      buttons.forEach((button, index) => {
+        if (game.players[index] !== null) {
+          button.disabled = false;
+        }
+      });
+    }
+
+    // Start Game Button
+    startButton.addEventListener("click", () => {
+      statusEl.textContent = game.startGame();
+      outputEl.textContent = "";
+      enableTriggersForActivePlayers();
+      restartButton.disabled = false;
+      startButton.disabled = true;
+    });
+
+    // Restart Game Button
+    restartButton.addEventListener("click", () => {
+      statusEl.textContent = game.restartGame();
+      outputEl.textContent = "";
+      createTriggerButtons(game.players);
+      enableTriggersForActivePlayers();
+    });
+
+    // Initialize the trigger buttons
+    createTriggerButtons(game.players);
+  </script>
+</body>
+</html>
